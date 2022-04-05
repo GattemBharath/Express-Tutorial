@@ -1,41 +1,26 @@
 const express = require("express");
-const { send } = require("express/lib/response");
 const app = express();
-const logger = require("./logger");
-const authorize = require("./authorize");
-const morgan = require("morgan");
+const people = require("./routes/people");
+const auth = require("./routes/auth");
 
-//? req => middleware => res
+//? static assets
+app.use(express.static("./methods-public"));
 
-//? 1. use vs route
-//? 2. options - our own / express / third party
+//? parse form data
+app.use(express.urlencoded({ extended: false }));
+`
+//? parse json
+app.use(express.json());
 
-//? app.use(logger); --> our own
-//? app.use(express.static('./public')) --> express
-//? app.use(morgan("tiny")); --> third party
+app.use("/api/people", people);
+app.use("/login", auth);
 
-// app.use("/api", logger);
-// api/home/about/products
-
-//? Multiple Middleware functions
-
-app.use([logger, authorize]);
-
-app.get("/", (req, res) => {
-  res.send("Home");
-});
-
-app.get("/about", (req, res) => {
-  res.send("About");
-});
-
-app.get("/api/products", (req, res) => {
-  res.send("Products");
-});
-
-app.get("/api/items", [logger, authorize], (req, res) => {
-  console.log(req.user);
-  res.send("Items");
+app.post("/api/postman/people", (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, msg: "please provide name" });
+  }
+  res.status(201).json({ success: true, data: [...people, name] });
 });
 
 app.listen(5000, () => {
